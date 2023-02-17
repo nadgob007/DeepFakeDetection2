@@ -18,6 +18,9 @@ from sklearn.tree import DecisionTreeClassifier
 from datetime import datetime                           # Время выполнения скрипта
 import time
 
+"""
+    Сторонние функции азимутального усреднения
+"""
 def azimuthalAverage(image, center=None, stddev=False, returnradii=False, return_nr=False,
                      binsize=0.5, weights=None, steps=False, interpnan=False, left=None, right=None,
                      mask=None):
@@ -276,8 +279,10 @@ def radialAverageBins(image, radbins, corners=True, center=None, **kwargs):
     return radbins, az, radavlist
 
 
-# Азимутальное усреднение
-def getPSD1D(psd2D):
+"""
+    Азимутальное усреднение не учитывает углов 
+"""
+def GetPSD1D(psd2D):
     h = psd2D.shape[0]  # Высота
     w = psd2D.shape[1]  # Ширина
     wc = w // 2         # Половина ширины
@@ -286,7 +291,8 @@ def getPSD1D(psd2D):
     # создать массив целочисленных радиальных расстояний от центра
     Y, X = np.ogrid[0:h, 0:w]
 
-    r = np.hypot(X - wc, Y - hc).astype(np.int) # Находим радиус окружности
+    # Находим радиус окружности
+    r = np.hypot(X - wc, Y - hc).astype(np.int)
 
     # Mean all psd2D pixels with label 'r' for 0 <= r <= wc
     # NOTE: this will miss power contributions in 'corners' r>wc
@@ -311,19 +317,13 @@ def GetPSD1D2(psd2D):
     psd1D = ndimage.mean(psd2D, r, index=np.arange(0, diag))
     return psd1D
 
-
-# Вычисление psd1D. Вход: изображения, выход: psd1D
+"""
+ Вычисляет psd1D. 
+    Вход: изображения 
+    Выход: psd1D (массив признаков)
+"""
 def calculations(img_nogrey, isavg):
-    try:
-        img = imread(img_nogrey)  # Цветное изображение
-    except:
-        f = open('err.txt', 'a')
-        f.write(img_nogrey)
-        f.close()
-        return 0, 0, [], []
-    else:
-        print('Исключений не произошло')
-
+    img = imread(img_nogrey)  # Цветное изображение
     img_grey = color.rgb2gray(img)  # Изображение в оттенках серого
 
     # Быстрое преобразование Фурье FFT
@@ -340,8 +340,11 @@ def calculations(img_nogrey, isavg):
 
     return img, img_grey, fft2, psd1D
 
-
-# Вывод результатов вычислений. Вход: изображение ,выход: отсутствует
+""" 
+ Рисует Спектрограмму и Азимутальное усреднение для входящего изображения 
+    Вход: изображение
+    Выход: отсутствует 
+"""
 def show_img(img_nogrey, isavg):
     img, img_grey, fft2, psd1D = calculations(img_nogrey, isavg)
 
@@ -360,8 +363,6 @@ def show_img(img_nogrey, isavg):
 
     # Быстрое преобразование Фурье FFT. Значения
     fig.add_subplot(2, 3, 3)
-    plt.ylabel('Амплитуда', fontsize=10)
-    plt.xlabel('Частота', fontsize=10)
     plt.title("Спектрограмма", fontsize=12)
     imshow(fft2, cmap='gray')   # Отображать серым
 
@@ -377,8 +378,11 @@ def show_img(img_nogrey, isavg):
 
     return 0
 
-
-# Создание списка имен файлов для каждой выборки
+""" 
+ Создаёт список имен изображений для train и test выборок
+    Вход: режим
+    Выход: отсутствует 
+"""
 def data_split(mode):   # mode: 20 or 40
     if mode == 20:
         truth = ['1_' + str(i) for i in range(10000)]          # 100KFake_10K               0 < i < 9999
@@ -425,8 +429,11 @@ def data_split(mode):   # mode: 20 or 40
 
     return all_K1
 
-
-# Нахождение пути к изображению по номеру
+"""
+ Находит путь к изображению по номеру
+    Вход: номер изображения (имя изображения)
+    Выход: путь до изображения
+"""
 def find_path(number):
     path = "E:\\NIRS\\Frequency\\Faces-HQ\\"
 
@@ -442,8 +449,12 @@ def find_path(number):
 
     return path
 
-
-# Примнимает список имен используемых изображений сохраняет и возвращает x_train - вектор признаков и y_train - вектор классов
+"""
+ Примнимает список имен всех выборок используемых изображений, вычисляет массив признаков, сохраняет файл с маасивом в 
+ указанную папку, возвращает x_train/x_test - вектор признаков и y_train/y_test - вектор классов
+    Вход: список имен используемых изображений, путь до папки сохранения
+    Выход: массивы признаков и классов для train и test 
+"""
 def list2psD1(list_allK1, path_folder):
 
     for i in range(len(list_allK1)):
@@ -500,7 +511,11 @@ def list2psD1(list_allK1, path_folder):
 
     return x_train, y_train, x_test, y_test
 
-# Сохраняем данные psd1D в текстовый файл Возвращает сколько строк сохранили
+""" 
+ Сохраняет массивы признаков и классов psd1D в текстовый файл и возвращает сколько строк сохранил
+    Вход: путь до файла сохранения, массив признаков, массив классов, название файлов
+    Выход: сколько строк сохранил
+"""
 def psd_save(path, x, y, numbers):
 
     # Формируем шапку таблицы в psd.txt
@@ -510,15 +525,19 @@ def psd_save(path, x, y, numbers):
     line = ''
     elem = 0
     while elem != len(x):
-        line += str(y[elem]) + '_' + numbers[elem] + '\t' + str([x[elem][i] for i in range(len(x[elem]))]) + '\n'
+        line += y[elem] + '_' + numbers[elem] + '\t' + str([x[elem][i] for i in range(len(x[elem]))]) + '\n'
         elem += 1
     f.write(line)
     f.close()
 
     return elem
 
-# Чтение файла, возвращает x - массив признаков и y - массив классов, interval- для чтения не всех (724) признака
-def read_save(path, interval):
+"""
+ Читает файл c признаками и возвращает массив признаков и классов
+    Вход: путь до файла чтения
+    Выход: x - массив признаков, y - массив классов
+"""
+def read_save(path):
     f = open(path, 'r')
     line = f.readline()
     x = []
@@ -531,29 +550,24 @@ def read_save(path, interval):
         numbers.append(result.pop(0))
         result = result[0][1:-2]
         result = re.split(r', ', result)
-        tmp = []
-        for i in interval:
-            for j in range(i[0], i[1]):
-                if result[j] == '':
-                    print(j)
-                    # for c in range(i[0], i[1]):
-                    #     tmp.append(float(0))
-                    break
-                else:
-                    tmp.append(float(result[j]))
-        x.append(tmp)
+        x.append([float(i) for i in result])
 
     y = []
     for i in numbers:
-        truth = i.split("_", 1)
+        truth = i.split("_")
         y.append(truth[0])
 
     f.close()
     return x, y
 
-def classifier(path_folder, interval):
-    x_train, y_train = read_save(path_folder + '\\train_psd.txt', interval)
-    x_test, y_test = read_save(path_folder + '\\test_psd.txt', interval)
+"""
+ Классифицирует полученные из файла массивы признаков по выборкам train и test
+    Вход: путь до папки 
+    Выход: точность для KN, SVM, DT 
+"""
+def classifier(path_folder):
+    x_train, y_train = read_save(path_folder + '\\train_psd.txt')
+    x_test, y_test = read_save(path_folder + '\\test_psd.txt')
 
     count_train = 0
     for i in range(len(y_train)):
@@ -565,24 +579,26 @@ def classifier(path_folder, interval):
         if y_test[i] == '1':
             count_test += 1
 
+    print(f'Train: {count_train}\nTest: {count_test}')
+
     # Классификация ближайших соседей
     neigh = KNeighborsClassifier(n_neighbors=5)
     neigh.fit(x_train, y_train)
 
     predicts_KN = neigh.predict(x_test)
     accuracy_KN = 0
-    for i in range(len(y_test)):
+    for i in range(200):
         if y_test[i] == predicts_KN[i]:
             accuracy_KN +=1
 
 
-    # Классификация векторов поддержки С радиальной базисной функции
+    # Классификация вспомогательных векторов С радиальной базисной функцией
     clf = SVC(kernel='rbf', gamma='auto')
     clf.fit(x_train, y_train)
 
     predicts_SVM = clf.predict(x_test)
     accuracy_SVM = 0
-    for i in range(len(y_test)):
+    for i in range(200):
         if y_test[i] == predicts_SVM[i]:
             accuracy_SVM += 1
 
@@ -593,13 +609,17 @@ def classifier(path_folder, interval):
 
     predicts_DT = clf.predict(x_test)
     accuracy_DT = 0
-    for i in range(len(y_test)):
+    for i in range(200):
         if y_test[i] == predicts_DT[i]:
             accuracy_DT += 1
 
     return accuracy_KN, accuracy_SVM, accuracy_DT
 
-# Создание файла со статистикой точности.Возвращает количество строк
+"""
+ Создает файла со статистикой точности
+    Вход: путь до файла, точности для KN, SVM, DT.
+    Выход: количество строк
+"""
 def accuracy_save(path, kn, svm, dt):
     # Формируем шапку таблицы в acc.txt
     f = open(path, 'w')
@@ -615,8 +635,11 @@ def accuracy_save(path, kn, svm, dt):
     f.close()
     return rows
 
-
-# Чтение файла со статистикой по всем 40 выборкам. Возвращает массив точностей по каждой выборке для каждого классификатора
+"""
+ Читает файл со статистикой по всем 40 выборкам. Возвращает массив точностей по каждой выборке для каждого классификатор
+    Вход: путь до файла чтения
+    Выход: массивы точностей для KN, SVM, DT
+"""
 def read_acc(path):
     f = open(path, 'r')
     line = f.readline() # Игнорируем шапку
@@ -635,128 +658,11 @@ def read_acc(path):
 
     return all_kn, all_svm, all_dt
 
-
-# !Чтение файла со статистикой по всем 40 выборкам. Возвращает массив точностей по каждой выборке для каждого классификатора
-def read_acc20(path, number_of_folders):
-    all_kn = []
-    all_svm = []
-    all_dt = []
-    intervals = []
-    for i in range(number_of_folders):
-        f = open(path + f'\\{i}\\acc20.txt', 'r')
-        line = f.readline()  # Игнорируем шапку
-        kn = []
-        svm = []
-        dt = []
-        while line:
-            line = f.readline()
-            if len(line) == 0:
-                break
-            result = re.split(r'\t ', line)
-            if i == 0:
-                intervals.append(result[0])
-            kn.append(float(result[1]))
-            svm.append(float(result[2]))
-            dt.append(float(result[3]))
-        f.close()
-        all_kn.append(kn)
-        all_svm.append(svm)
-        all_dt.append(dt)
-        print(i)
-
-    return all_kn, all_svm, all_dt, intervals
-
-
-def show_temp(all_kn, all_svm, all_dt, intervals, number_of_folders):
-    kn = []
-    svm = []
-    dt = []
-    for j in range(len(all_kn[0])):
-        mean_kn = []
-        mean_svm = []
-        mean_dt = []
-        for i in range(number_of_folders):
-            mean_kn.append(all_kn[i][j])
-            mean_svm.append(all_svm[i][j])
-            mean_dt.append(all_dt[i][j])
-        kn.append(np.mean(mean_kn))
-        svm.append(np.mean(mean_svm))
-        dt.append(np.mean(mean_dt))
-
-    a = [[] for i in range(71)]
-    b = [[] for i in range(71)]
-    c = [[] for i in range(71)]
-
-    count = 0
-    for i in range(72):
-        count +=i
-
-    k = 0
-    min_a = 100
-    min_b = 100
-    min_c = 100
-    max_a = 0
-    max_b = 0
-    max_c = 0
-    for j in range(71):
-        for i in range(71):
-            if i < j:
-                a[j].append(0)
-                b[j].append(0)
-                c[j].append(0)
-            else:
-                break
-
-        for i in range(j, 71):
-            a[j].insert(i, int(kn[k]))
-            b[j].insert(i, int(svm[k]))
-            c[j].insert(i, int(dt[k]))
-
-            if kn[k] < min_a:
-                min_a = kn[k]
-            if svm[k] < min_b:
-                min_b = svm[k]
-            if dt[k] < min_c:
-                min_c = dt[k]
-
-            if kn[k] > max_a:
-                max_a = kn[k]
-            if svm[k] > max_b:
-                max_b = svm[k]
-            if dt[k] > max_c:
-                max_c = dt[k]
-            i+=1
-            k+=1
-        print(j)
-
-
-    fig = plt.figure(figsize=(15, 5))
-
-    # KN
-    fig.add_subplot(1, 3, 1)
-    plt.title(f"Kn (min/max)\n{min_a}-{max_a}", fontsize=12)
-    plt.matshow(a, 0)
-    fig.colorbar(plt.matshow(a, 0), orientation='vertical', fraction=0.04)
-    plt.clim(0, 100)
-
-    # SVM
-    fig.add_subplot(1, 3, 2)
-    plt.title(f"SVM (min/max)\n{min_b}-{max_b}", fontsize=12)
-    plt.matshow(b, 0)
-    fig.colorbar(plt.matshow(b, 0), orientation='vertical', fraction=0.04)
-    plt.clim(0, 100)
-
-    # DT
-    fig.add_subplot(1, 3, 3)
-    plt.title(f"DT (min/max)\n{min_c}-{max_c}", fontsize=12)
-    plt.matshow(c, 0)
-    fig.colorbar(plt.matshow(c, 0), orientation='vertical', fraction=0.04)
-    plt.clim(0, 100)
-
-    plt.show()
-
-
-# Отображение графика для общей статистики точности каждого классификатора
+"""
+ Отображает график для общей статистики точности каждого классификатора
+    Вход: колличество выборок, массивы точностей для KN, SVM, DT
+    Выход: отсутствует
+"""
 def show_acc(num, all_kn, all_svm, all_dt):
     #  Задаем смещение равное половине ширины прямоугольника:
     x1 = np.arange(0, num) - 0.3
@@ -770,16 +676,14 @@ def show_acc(num, all_kn, all_svm, all_dt):
     y2 = [all_svm[i] for i in range(len(all_svm))]
     y3 = [all_dt[i] for i in range(len(all_dt))]
 
-    #y_masked = np.ma.masked_where(int(y1) < 50, y1)
-
     fig, ax = plt.subplots()
-    plt.ylim(min(mins), 100)
+    plt.ylim(min(mins), 101)
 
     ax.bar(x1, y1, width=0.2, label='KN')
     ax.bar(x2, y2, width=0.2, label='SVM', color='orange')
-    ax.bar(x3, y3, width=0.2, label='DT' ,color='green')
+    ax.bar(x3, y3, width=0.2, label='DT', color='green')
 
-    ax.legend(loc = "upper left")
+    ax.legend(loc = "upper right")
 
     ax.set_title(f'Точность KN, SVM, DT')
     ax.set_facecolor('seashell')
@@ -791,7 +695,11 @@ def show_acc(num, all_kn, all_svm, all_dt):
 
     return 0
 
-
+"""
+Классифицирует 1ну выборку в 1ой папке и сохраняет файл с точностямим 
+    Вход: режим
+    Выход: отсутствует
+"""
 def classifier_1k(mode=1):
     path = 'E:\\NIRS\\Frequency\\Faces-HQ\\split\\100KFake_10K+celebA-HQ_10K'
     if mode == 1:
@@ -809,32 +717,6 @@ def classifier_1k(mode=1):
 
     return 0
 
-
-# Сохраняет значения классификаторов для конкретного колличества признаков
-def save_in_1K(path, kn, svm, dt, intervals, mode):
-    # Формируем шапку таблицы в acc[№].txt
-    f = open(path, 'w')
-    form = 'Interval\t KN(%)\t SVM(%)\t DT(%)\n'
-    f.write(form)
-    line = ''
-    rows = 0
-    j = 0
-    for i in range(len(kn)):
-        if mode == 10:
-            line += f'{intervals[j][0]}-{intervals[j][1]}\t {kn[i] / 2}\t {svm[i] / 2}\t {dt[i] / 2}\n'
-        elif mode == 20:
-            line += f'{intervals[j][0]}-{intervals[j][1]}:{intervals[j + 1][0]}-{intervals[j + 1][1]}\t {kn[i] / 2}\t {svm[i] / 2}\t {dt[i] / 2}\n'
-        f.write(line)
-        line = ''
-        rows = i
-        if mode == 10:
-            j += 1
-        elif mode == 20:
-            j += 2
-    f.close()
-    return rows
-
-
 if __name__ == '__main__':
     # Начало
     start_time = datetime.now()
@@ -851,80 +733,25 @@ if __name__ == '__main__':
         x_train, y_train, x_test, y_test = list2psD1(list_allK1, 'E:\\NIRS\\Frequency\\Faces-HQ\\split\\all')
 
     path_0 = "E:\\NIRS\\Frequency\\Faces-HQ\\split\\all"
-
     all_kn = []
     all_svm = []
     all_dt = []
-    intervals = []
 
-    # b = 1   # Перещёт классификаторами для интервала в 10 признаков
-    # if b == 1:
-    #     for j in range(40):
-    #         all_kn = []
-    #         all_svm = []
-    #         all_dt = []
-    #         intervals = []
-    #         for i in range(0, 720, 10):
-    #             if i == 710:
-    #                 interval = [[i, i+14]]
-    #             else:
-    #                 interval = [[i, i+10]]
-    #
-    #             kn, svm, dt = classifier(path_0 +'\\'+ str(j), interval)
-    #             all_kn.append(kn)
-    #             all_svm.append(svm)
-    #             all_dt.append(dt)
-    #             intervals.append(interval[0])
-    #
-    #         save_in_1K(path_0 +'\\'+ str(j) + '\\acc.txt', all_kn, all_svm, all_dt, intervals)
-
-    b = 0  # Перещёт классификаторами для интервала в 20 признаков из участков по 10 из разных частей.
+    b = 0   # Перещёт классификаторами
     if b == 1:
-        for j in range(0, 40):
-            all_kn = []
-            all_svm = []
-            all_dt = []
-            intervals = []
-
-            for i in range(0, 720, 10):
-                for k in range(10+i, 720, 10):
-                    interval = []
-                    interval.append([i, i + 10])
-
-                    if k == 710:
-                        interval.append([k, k + 14])
-                    else:
-                        interval.append([k, k + 10])
-
-                    kn, svm, dt = classifier(path_0 + '\\' + str(j), interval)
-                    all_kn.append(kn)
-                    all_svm.append(svm)
-                    all_dt.append(dt)
-                    intervals.append(interval[0])
-                    intervals.append(interval[1])
-                print(f'Выборка:{j},Интервал:{i}')
-
-            save_in_1K(path_0 + '\\' + str(j) + '\\acc20.txt', all_kn, all_svm, all_dt, intervals)
-
+        for i in range(40):
+            kn, svm, dt = classifier(path_0 +'\\'+ str(i))
+            all_kn.append(kn)
+            all_svm.append(svm)
+            all_dt.append(dt)
+        accuracy_save(path_0 + '\\acc.txt', all_kn, all_svm, all_dt)
 
     c = 0   # Отображение данных классификаторов
     if c == 1:
-        for i in range(40):
-            kn_all, svm_all, dt_all = read_acc(path_0 + '\\' +str(i)+ '\\acc.txt')
-            show_acc(len(kn_all), kn_all, svm_all, dt_all)
+        all_kn, all_svm, all_dt = read_acc(path_0 + '\\acc.txt')
+        show_acc(len(all_kn), all_kn, all_svm, all_dt)
 
-    all_kn = []
-    all_svm = []
-    all_dt = []
-    intervals = []
-
-    d = 0  # Отображение тепловой карты
-    if d == 1:
-        all_kn, all_svm, all_dt, intervals = read_acc20(path_0, 40)
-        show_temp(all_kn, all_svm, all_dt, intervals, 40)
-
-    #show_img(path + '\\12.jpg', isavg)
-    show_img(path + 'E:\\NIRS\\Frequency\\Faces-HQ2\\true\\images1024x1024-20191222T221133Z-001\\images1024x1024\\59000', isavg)
+    show_img(path + '\\5.jpg', isavg)
     # classifier_1k(mode=0)
 
     # Конец
