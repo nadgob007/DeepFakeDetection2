@@ -67,7 +67,7 @@ def list2psD1_2(list_allK1, path_folder):
         count = 0
         for j in train_numbers:
             path = j
-            img, img_grey, fft2, psd1D = calculations(path, False)
+            img, img_grey, fft2, psd1D = calculate_features(path, False)
             x_train.append(psd1D)
             print(f'Train №{i}')
             print(f'Номер: {j}')
@@ -95,7 +95,7 @@ def list2psD1_2(list_allK1, path_folder):
         for j in test_numbers:
             path = j
             print(path)
-            img, img_grey, fft2, psd1D = calculations(path, False)
+            img, img_grey, fft2, psd1D = calculate_features(path, False)
             x_test.append(psd1D)
             print(f'Test №{i}')
             print(f'Номер: {j}')
