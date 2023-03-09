@@ -11,9 +11,9 @@ initial_params = {
 initial_params['number_of_samples'] = int(initial_params['all_images'] / initial_params['all_images'])
 
 initial_params2 = {
-    'all_images': 2000,                                         # колличество всех фотографий
+    'all_images': 1000,                                         # колличество всех фотографий
     'size_of_sample': 1000,                                     # колличество фотографий в выборке (папке)
-    'number_of_folders': 0,                                     # колличество выборок(папок) по size_of_sample фотографий
+    'number_of_samples': 0,                                     # колличество выборок(папок) по size_of_sample фотографий
     'p': 0.80,                                                  # Процент тренировочной части выборки
     'count_of_features': 724,                                   # Общее количество признаков для 1 изображения
     'path': "E:\\NIRS\\Frequency\\Faces-HQ2"

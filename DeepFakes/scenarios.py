@@ -1,7 +1,7 @@
 from functions import *
 
 """
-     сценарий для полной обработки
+     сценарий для полной обработки (БПФ, Азимутальное усреднение)
 """
 def scenario1 (initial_params):
     path = initial_params['path']
@@ -39,10 +39,19 @@ def scenario1 (initial_params):
      сценарий для обработки 1K изображений
 """
 def scenario2 (initial_params):
-    # path = initial_params['path']
-    #
+    path = initial_params['path']
+
+    # Подаются пути к данным, создаются txt файлы с psd. Использовать для перерасчёта.
     # data_to_features(initial_params['all_images'], initial_params['size_of_sample'], initial_params['p'],
     #             path + '\\true', path + '\\false', path + '\\split1K')
 
-    #show_img("E:\\NIRS\\Frequency\\Faces-HQ\\Flickr-Faces-HQ_10K\\1.jpg", False)
+    # Классификация по имеющимся txt файлам
+    interval = [[0, initial_params['count_of_features']]]
+    classification(path + '\\split1K', initial_params['number_of_samples'], interval)
+
+"""
+     Косинусное преобразование
+"""
+def scenario3 (initial_params):
+    show_img("E:\\NIRS\\Frequency\\Faces-HQ\\Flickr-Faces-HQ_10K\\1.jpg", False)
     cosinus_trans("E:\\NIRS\\Frequency\\Faces-HQ\\Flickr-Faces-HQ_10K\\1.jpg")
