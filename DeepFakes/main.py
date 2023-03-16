@@ -8,7 +8,7 @@ initial_params = {
     'count_of_features': 724,                                   # Общее количество признаков для 1 изображения
     'path': "E:\\NIRS\\Frequency\\Faces-HQ2"
 }
-initial_params['number_of_samples'] = int(initial_params['all_images'] / initial_params['all_images'])
+initial_params['number_of_samples'] = int(initial_params['all_images'] / initial_params['size_of_sample'])
 
 initial_params2 = {
     'all_images': 1000,                                         # колличество всех фотографий
@@ -18,16 +18,16 @@ initial_params2 = {
     'count_of_features': 724,                                   # Общее количество признаков для 1 изображения
     'path': "E:\\NIRS\\Frequency\\Faces-HQ2"
 }
-initial_params2['number_of_samples'] = int(initial_params2['all_images'] / initial_params2['all_images'])
+initial_params2['number_of_samples'] = int(initial_params2['all_images'] / initial_params2['size_of_sample'])
 
 if __name__ == '__main__':
     # Начало
     start_time = datetime.now()
     print('Start in:', start_time)
 
-    #scenario1(initial_params)
+    scenario1(initial_params) # Для функции классификации дописать более полную точность
 
-    scenario2(initial_params2)
+    # scenario2(initial_params2)
 
     # Конец
     print('End in:', datetime.now() - start_time)

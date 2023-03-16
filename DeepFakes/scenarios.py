@@ -6,14 +6,14 @@ from functions import *
 def scenario1 (initial_params):
     path = initial_params['path']
 
-    a = 1  # Подаются пути к данным, создаются txt файлы с psd. Использовать для перерасчёта.
+    a = 0  # Подаются пути к данным, создаются txt файлы с psd. Использовать для перерасчёта.
     if a == 1:
         data_to_psd(initial_params['all_images'], initial_params['size_of_sample'], initial_params['p'], path + '\\true', path + '\\false', path + '\\split')
 
     b = 1  # Классификация по имеющимся txt файлам
     if b == 1:
         interval = [[0, initial_params['count_of_features']]]
-        classification(path + '\\split', initial_params['number_of_folders'], interval)
+        classification(path + '\\split', initial_params['number_of_samples'], interval)
 
     c = 0  # Отображение данных классификаторов
     if c == 1:
@@ -22,7 +22,7 @@ def scenario1 (initial_params):
 
     d = 1  # Перещёт классификаторами для интервала в 20 признаков из участков по 10 из разных частей вектора признаков.
     if d == 1:
-        classification20(path + '\\split', initial_params['number_of_folders'])
+        classification20(path + '\\split', initial_params['number_of_samples'])
 
     e = 0  # Перещёт классификаторами для интервала в 10 признаков
     if e == 1:
@@ -32,8 +32,8 @@ def scenario1 (initial_params):
 
     f = 1  # Отображение тепловой карты
     if f == 1:
-        all_kn, all_svm, all_dt, intervals = read_acc20(path + '\\split', initial_params['number_of_folders'])
-        show_temp(all_kn, all_svm, all_dt, intervals, initial_params['number_of_folders'])
+        all_kn, all_svm, all_dt, intervals = read_acc20(path + '\\split', initial_params['number_of_samples'])
+        show_temp(all_kn, all_svm, all_dt, intervals, initial_params['number_of_samples'])
 
 """
      сценарий для обработки 1K изображений

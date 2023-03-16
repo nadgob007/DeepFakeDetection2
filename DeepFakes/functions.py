@@ -110,7 +110,6 @@ def azimuthalAverage(image, center=None, stddev=False, median=False, returnradii
             radial_prof = np.histogram(r, bins, weights=(image * weights * mask))[0] / \
                           np.histogram(r, bins, weights=(mask * weights))[0]
 
-
     if interpnan:
         radial_prof = np.interp(bin_centers, bin_centers[radial_prof == radial_prof],
                                 radial_prof[radial_prof == radial_prof], left=left, right=right)
@@ -851,7 +850,7 @@ def list2psD1_2(list_allK1, path_folder, features):
         path - куда сохранить psd
     Выход: train.txt и test.txt файлы с путями до *.png файлов
 """
-def data_to_psd(n, sample, tf, path_true, path_false, path):
+def data_to_psd(n, sample, tf, path_true, path_false, path, features = calculate_features):
 
     # 1. получаем массив путей до файлов картинок и оставляем только n/2 от каждого.
     true, false = get_data_list(n, path_true, path_false)
@@ -872,7 +871,7 @@ def data_to_psd(n, sample, tf, path_true, path_false, path):
         all_K1.append({0: K1_train, 1: K1_test})  # 0-train 1-test
 
     # 5. Получаем массив признаков для изображений
-    x_train, y_train, x_test, y_test = list2psD1_2(all_K1, path)
+    x_train, y_train, x_test, y_test = list2psD1_2(all_K1, path, features)
     return 0
 
 
