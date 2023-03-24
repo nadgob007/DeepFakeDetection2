@@ -126,44 +126,6 @@ def azimuthalAverage(image, center=None, stddev=False, median=False, returnradii
         return radial_prof
 
 """
-[-]
-    Азимутальное усреднение не учитывает углов 
-"""
-def getPSD1D(psd2D):
-    h = psd2D.shape[0]  # Высота
-    w = psd2D.shape[1]  # Ширина
-    wc = w // 2         # Половина ширины
-    hc = h // 2         # Половина высоты
-
-    # создать массив целочисленных радиальных расстояний от центра
-    Y, X = np.ogrid[0:h, 0:w]
-
-    r = np.hypot(X - wc, Y - hc).astype(np.int) # Находим радиус окружности
-
-    # Mean all psd2D pixels with label 'r' for 0 <= r <= wc
-    # NOTE: this will miss power contributions in 'corners' r>wc
-    psd1D = ndimage.mean(psd2D, r, index=np.arange(0, wc))
-    return psd1D
-
-
-def GetPSD1D2(psd2D):
-    h = psd2D.shape[0]  # Высота
-    w = psd2D.shape[1]  # Ширина
-    wc = w // 2         # Половина ширины
-    hc = h // 2         # Половина высоты
-    diag = np.hypot(wc, hc).astype(np.int) # Диагональ от центра
-
-    # создать массив целочисленных радиальных расстояний от центра до угла
-    Y, X = np.ogrid[0:h, 0:w]
-
-    r = np.hypot(X - wc, Y - hc).astype(np.int) # Находим радиус окружности
-
-    # Mean all psd2D pixels with label 'r' for 0 <= r <= wc
-    # NOTE: this will miss power contributions in 'corners' r>wc
-    psd1D = ndimage.mean(psd2D, r, index=np.arange(0, diag))
-    return psd1D
-
-"""
  Вычисляет psd1D. 
     Вход: изображения 
     Выход: psd1D (массив признаков)
@@ -197,80 +159,6 @@ def calculate_features(img_nogrey, isavg):
     psd1D = azimuthalAverage(fft2, binsize=1, median=True)
 
     return img, img_grey, fft2, psd1D
-
-def cosinus_trans(img_nogrey):
-    img = imread(img_nogrey)
-    img_grey = color.rgb2gray(img)  # Изображение в оттенках серого
-
-    w, h = img_grey.shape
-    f = 8
-    count = int(w/f)
-
-    blocks = []
-    blocks_dct = []
-    for i in range(count):
-        for j in range(count):
-            blocks.append(img_grey[i*f:(i*f+f), j*f:(j*f+f)])
-            blocks_dct.append(np.abs(dct(img_grey[i*f:(i*f+f), j*f:(j*f+f)])))
-
-    c = []
-    for i in range(0, 128):
-        b = c
-
-        a = blocks_dct[i*128]
-        for j in range(1, 128):
-           a = np.hstack([a, blocks_dct[i*128 + j] ])
-
-        if i == 0:
-            c = a.copy()
-        else:
-            c = np.vstack([b, a])
-
-
-    # fig = plt.figure(figsize=(count, count))
-    # gs = gridspec.GridSpec(count, count,
-    #                        wspace=0.0, hspace=0.0,
-    #                        top=1. - 0.5 / (count + 1), bottom=0.5 / (count + 1),
-    #                        left=0.5 / (count + 1), right=1 - 0.5 / (count + 1))
-    # for i in range(count):
-    #     for j in range(count):
-    #         fig.add_subplot(gs[i, j])
-    #         imshow(blocks[j+i*f], cmap='gray')
-
-    fig = plt.figure(figsize=(8, 8))
-    gs = gridspec.GridSpec(8, 8,
-                           wspace=0.0, hspace=0.0,
-                           top=1. - 0.5 / (8 + 1), bottom=0.5 / (8 + 1),
-                           left=0.5 / (8 + 1), right=1 - 0.5 / (8 + 1))
-    imshow(c, cmap='gray')
-
-    for i in range(count):
-        for j in range(count):
-            fig.add_subplot(gs[i, j])
-            b = dct(blocks[j + i * f])
-            # lg = np.fft.fftshift(np.log(1 + np.abs(b)))/np.log(1 + np.abs(b)).max()
-            imshow(b, cmap='gray')
-
-    dct2 = np.log(1 +np.abs(dct(img_grey)))
-
-    # Простотранство для отображения
-    fig = plt.figure(figsize=(15, 5))
-
-    fig.add_subplot(2, 3, 1)
-    plt.title("Изображение до обработки", fontsize=12)
-    imshow(img)
-
-    # В оттенках серого. Значения от 0 до 1
-    fig.add_subplot(2, 3, 2)
-    plt.title("Изображение в отенках серого", fontsize=12)
-    imshow(img_grey)
-
-    fig.add_subplot(2, 3, 3)
-    imshow(dct2, cmap='gray')  # Отображать серым
-    show()
-
-    print()
-
 
 """ 
  Рисует Спектрограмму и Азимутальное усреднение для входящего изображения 
@@ -853,7 +741,7 @@ def list2psD1_2(list_allK1, path_folder, features):
 def data_to_psd(n, sample, tf, path_true, path_false, path, features = calculate_features):
 
     # 1. получаем массив путей до файлов картинок и оставляем только n/2 от каждого.
-    true, false = get_data_list(n, path_true, path_false)
+    true, false = get_datasets_list(n, path_true)
 
     # 2. помечаем 1 - true, 0 - false
     true = [[1, true[i]] for i in range(len(true))]
@@ -879,7 +767,7 @@ def data_to_psd(n, sample, tf, path_true, path_false, path, features = calculate
 def data_to_features(n, sample, tf, path_true, path_false, path, features = calculate_features):
 
     # 1. получаем массив путей до файлов картинок и оставляем только n/2 от каждого.
-    true, false = get_data_list(n, path_true, path_false)
+    true, false = get_datasets_list(n, path_true)
 
     # 2. помечаем 1 - true, 0 - false
     true = [[1, true[i]] for i in range(len(true))]
@@ -979,3 +867,255 @@ def classification20(path, number_folders):
                 intervals.append(interval[1])
             print(f'Выборка:{j},Интервал:{i}')
         save_in_1K(path + '\\' + str(j) + '\\acc20.txt', all_kn, all_svm, all_dt, intervals, mode=20)
+
+
+""" ___________________________________________
+                    Сценарий 3
+    ___________________________________________
+"""
+
+"""
+ Вычисление косинусного преобразования, μ – среднего по выборке и σ - среднеквадратического отклонения.
+    Вход:
+        img_nogrey - изображение
+        is_zigzag - распологать ли элементы в зиг-заг
+    Выход:
+"""
+def cosinus_trans(img_nogrey, is_zigzag=True):
+    img = imread(img_nogrey)
+    img_grey = color.rgb2gray(img)  # Изображение в оттенках серого
+
+    w, h = img_grey.shape
+    f = 8
+    count = int(w/f)
+
+    blocks = []
+    blocks_dct = []
+    averages = [[] for i in range(f*f)]
+
+    for i in range(count):
+        for j in range(count):
+            blocks.append(img_grey[i*f:(i*f+f), j*f:(j*f+f)])
+
+            # Косинусное преобразование
+            block = dct(img_grey[i*f:(i*f+f), j*f:(j*f+f)])
+            # модуль от косинусного перобразования надо ли ?
+            #block = np.abs(block)
+            if is_zigzag:
+                block = zigzag(block)
+                # Создать 2д массив из 1д
+                #block = np.reshape(block, (-1, 8))
+                for i in range(len(block)):
+                    averages[i].append(block[i])
+            blocks_dct.append(block)
+
+    averages_m = [np.mean(i) for i in averages]
+    averages_beta = [np.std(i)/2**(1/2) for i in averages]
+
+    return averages_beta
+
+"""
+ Демонстрация косинусного преобразования
+    Вход:
+        img_nogrey - изображение
+        is_zigzag - распологать ли элементы в зиг-заг
+    Выход: нет
+"""
+def cosinus_trans_show(img_nogrey, is_zigzag=True):
+    img = imread(img_nogrey)
+    img_grey = color.rgb2gray(img)  # Изображение в оттенках серого
+    w, h = img_grey.shape
+    f = 8
+    count = int(w/f)
+    blocks = []
+    blocks_dct = []
+    averages = [[] for i in range(f*f)]
+
+    for i in range(count):
+        for j in range(count):
+            blocks.append(img_grey[i*f:(i*f+f), j*f:(j*f+f)])
+
+            # Косинусное преобразование
+            block = dct(img_grey[i*f:(i*f+f), j*f:(j*f+f)])
+
+            # модуль от косинусного перобразования надо ли ?
+            #block = np.abs(block)
+            if is_zigzag:
+                block = zigzag(block)
+
+                # Создать 2д массив из 1д
+                #block = np.reshape(block, (-1, 8))
+                for i in range(len(block)):
+                    averages[i].append(block[i])
+            blocks_dct.append(block)
+
+    averages_m = [np.mean(i) for i in averages]
+    averages_beta = [np.std(i)/2**(1/2) for i in averages]
+
+    # соединяем блоки в 1 изображение
+    c = []
+    for i in range(0, 128):
+        b = c
+
+        a = blocks_dct[i*128]
+        for j in range(1, 128):
+           a = np.hstack([a, blocks_dct[i*128 + j] ])
+
+        if i == 0:
+            c = a.copy()
+        else:
+            c = np.vstack([b, a])
+
+    fig = plt.figure(figsize=(8, 8))
+    imshow(c, cmap='gray')
+
+    dct2 = np.log(1 +np.abs(dct(img_grey)))
+    # Простотранство для отображения
+    fig = plt.figure(figsize=(15, 5))
+
+    fig.add_subplot(2, 3, 1)
+    plt.title("Изображение до обработки", fontsize=12)
+    imshow(img)
+
+    # В оттенках серого. Значения от 0 до 1
+    fig.add_subplot(2, 3, 2)
+    plt.title("Изображение в отенках серого", fontsize=12)
+    imshow(img_grey)
+
+    fig.add_subplot(2, 3, 3)
+    imshow(dct2, cmap='gray')  # Отображать серым
+    show()
+
+"""
+  Зиг-загом переписывает 2d массив в 1d массив. 
+    Вход: массив 
+    Выход: массив в зиг-заг развёртке
+"""
+def zigzag(matrix):
+    zigzag = []
+    for index in range(1, len(matrix) + 1):
+        slice = [i[:index] for i in matrix[:index]]
+        diag = [slice[i][len(slice) - i - 1] for i in range(len(slice))]
+        if len(diag) % 2:
+            diag.reverse()
+        zigzag += diag
+
+    for index in range(1, len(matrix)):
+        slice = [i[index:] for i in matrix[index:]]
+        diag = [slice[i][len(slice) - i - 1] for i in range(len(slice))]
+        if len(diag) % 2:
+            diag.reverse()
+        zigzag += diag
+    return zigzag
+
+"""
+ Составляет массивы путей до настоящих и поддельных изображений. получаем массивы путей до файлов картинок.
+    Вход: 
+        n - размер выборки, 
+        path_true и path_false - пути до папок с настоящими и поддельными изображениями
+    Выход: массивов путей до настоящих и поддельных изображений.
+"""
+def get_datasets_paths(path_true, path_false):
+    true_datasets = [[os.path.join(path_true, dirpath)] for dirpath in os.listdir(path_true)]
+    for j in true_datasets:
+        true_items = []
+        for dirpath, dirnames, filenames in os.walk(j[0]):
+            if not (len(filenames) == 0):
+                for i in filenames:
+                    true_items.append(dirpath +'\\'+ i)
+        j.append(true_items)
+
+    false_datasets = [[os.path.join(path_false, dirpath)] for dirpath in os.listdir(path_false)]
+    for j in false_datasets:
+        false_items = []
+        for dirpath, dirnames, filenames in os.walk(j[0]):
+            if not (len(filenames) == 0):
+                for i in filenames:
+                    false_items.append(dirpath +'\\'+ i)
+        j.append(false_items)
+
+    return true_datasets, false_datasets
+
+""" 
+ 
+    Вход: путь до файла сохранения, название сохраняемого, массив бета
+    Выход: нет
+"""
+def dct_save(path, name, averages_beta):
+    # Сохраняем 1 массив созданый по 1 изображению
+    f = open(path + '\\' + 'dct.txt', 'a')
+    line = ''
+    line += str(name) +'\t'+ str([i for i in averages_beta]) +'\n'
+    f.write(line)
+    f.close()
+
+"""
+ 
+    Вход: путь до файла чтения
+    Выход: averages - массив матриц beta
+"""
+def dct_read(path):
+    f = open(path +'\\'+ 'dct.txt', 'r')
+    line = '.'
+    averages = []
+    names = []
+    while line:
+        line = f.readline()
+        if len(line) == 0:
+           break
+        result = re.split(r'\t', line)
+        names.append(result.pop(0))
+        result = result[0][1:-2]
+        result = re.split(r', ', result)
+        tmp = [float(i) for i in result]
+        averages.append(tmp)
+    f.close()
+    return averages
+
+def data_to_frequencies(path_true, path_false, path):
+    # 1. получаем массив путей до файлов картинок.
+    true, false = get_datasets_paths(path_true, path_false)
+
+    # 2. Высчитываем и сохраняем матрицу(64) для каждого изображения в каждом датасете
+    # TODO: (объединить этот этап в 1ну функцию и оба фора объединить)!!!!
+    for dataset in true:
+        averages = [[] for i in range(len(dataset[1]))]
+
+        # Путь до папки датасета
+        path_folder = path +'\\true\\'+ os.path.basename(os.path.normpath(dataset[0]))
+        if not os.path.exists(path_folder):
+            os.mkdir(path_folder)
+
+        bookmark = len(dct_read(path_folder))
+        if len(dataset[1]) > bookmark:
+            count = bookmark
+            dataset_c = dataset[1][bookmark:]
+            for i in dataset_c:
+                averages_beta = cosinus_trans(i)
+                dct_save(path_folder, i, averages_beta)
+                for j in range(len(averages_beta)):
+                    averages[j].append(averages_beta[j])
+                print(count, '/', len(dataset[1]))
+                count+=1
+        beta = [np.mean(j) for j in averages]
+
+    for dataset in false:
+        averages = [[] for i in range(len(dataset[1]))]
+
+        # Путь до папки датасета
+        path_folder = path + '\\false\\' + os.path.basename(os.path.normpath(dataset[0]))
+        if not os.path.exists(path_folder):
+            os.mkdir(path_folder)
+
+        bookmark = len(dct_read(path_folder))
+        if len(dataset[1]) > bookmark:
+            count = bookmark
+            dataset_c = dataset[1][bookmark:]
+            for i in dataset_c:
+                averages_beta = cosinus_trans(i)
+                dct_save(path_folder, i, averages_beta)
+                for j in range(len(averages_beta)):
+                    averages[j].append(averages_beta[j])
+                print(count, '/', len(dataset[1]))
+                count += 1
+        beta = [np.mean(j) for j in averages]

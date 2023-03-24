@@ -53,5 +53,5 @@ def scenario2 (initial_params):
      Косинусное преобразование
 """
 def scenario3 (initial_params):
-    show_img("E:\\NIRS\\Frequency\\Faces-HQ\\Flickr-Faces-HQ_10K\\1.jpg", False)
-    cosinus_trans("E:\\NIRS\\Frequency\\Faces-HQ\\Flickr-Faces-HQ_10K\\1.jpg")
+    path = initial_params['path']
+    data_to_frequencies(path + '\\true2', path + '\\false2', path + '\\datasets')
